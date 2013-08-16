@@ -1,9 +1,9 @@
 fyi.objectsandcollections
 =========================
 
-A live application demonstrating the FatfFractal features in the blog of the same name
+This test application demonstrates real examples of working with FatFractal's datagraph.
 
-See the blog post <a href = http://fatfractal.com/prod/fyi-datagraph-with-objects-and-collections/ target = _blank>here</a>
+See the inspiration for this app <a href = http://fatfractal.com/products/noserver-features/ target = _blank>here</a>
 
-See the working application <a href = http://fyi.fatfractal.com/objectandcollections/ target = _blank>here</a>
+See the working application <a href = http://fyi.fatfractal.com/datagraph/ target = _blank>here</a>
 
