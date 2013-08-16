@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en" ng-app="ffConsole">
+<head>
+  <meta charset="utf-8">
+  <title>The FatFractal FYI Test Harness</title>
+  <script type="text/javascript">
+    function httpsRedirect() {
+      var httpURL = window.location.hostname + window.location.pathname;
+      var httpsURL = "https://" + httpURL;
+      window.location = httpsURL;
+    }
+    console.log(window.location.href);
+    console.log(!window.location.href.match('^https://') && !window.location.href.match('^http://localhost'));
+    if (!window.location.href.match('^https://') && !window.location.href.match('^http://localhost'))
+      httpsRedirect();
+  </script>
+  <link rel="stylesheet" href="css/app.css"/>
+  <link href="lib/ui-bootstrap/assets/bootstrap.css" rel="stylesheet" media="screen">
+</head>
+<!--
+<body onunload="cleanUp()">
+-->
+<body>
+<div class="navbar" id="navbar" ng-controller="LoginCtrl">
+  <div class="navbar-inner">
+    <img src="img/beta.png" width="240px" class="brand pull-left">
+    <h1 style="margin: 20px -20px">Test Harness</h1>
+    <div class="span4" ui-if="refreshing" ng-cloak spinner style="margin: 20px -20px"></div>
+  </div>
+</div>
+<div class="well" id = "top-level-section">
+  <div class="well" id = "intro-section">
+  <h1>FYI - Datagraph with Objects and Collections</h1>
+  <p>This post demonstrates real examples of working with FatFractal's datagraph.
+  </p>
+  <div class="well">
+    <h2>The following Model is used with this post</h2>
+    <div class="well">
+      <p>function Person() {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;this.firstName = null;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;this.lastName = null;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;this.gender = null;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;this.mother = null;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;this.father = null;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;this.siblings = null;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;this.picture = null;<br>
+	}
+      </p>
+    </div>
+    <h4>You can see the data created by this app using the FatFractal DataBrowser (
+      <a href = https://system.fatfractal.com/console/databrowser/databrowser.html?baseUrl=https://fyi.fatfractal.com/datagraph target = _blank>
+        here
+      </a>
+      )
+    </h4>
+    <h4>You can access the source code for the sample application (
+      <a href = https://github.com/FatFractal/fyi.datagraph target = _blank>
+        here
+      </a>
+      )
+    </h4>
+  </div>
+</div>
+  <div class="well" id = "datagraph-section">
+    <h2>Datagraph</h2>
+	<p>This test will fetch the entire datagraph.
+    <div class="well">
+      <p>var datagraph;<br>
+      ff.getArrayFromUri("/Persons/()?depthRef=3&depthGb=3", function(response) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;datagraph = response;<br>
+      });
+  </p>
+    </div>
+    <button id="get-datagraph-button" class="btn" onclick="getPersonsGraph()">Try it!</button>
+    <br>
+    <p id = "get-datagraph-response"></p>
+  </div>
+  <div class="well" id = "reference-section">
+    <h2>References</h2>
+	<p>This test will show you how to retrieve an object by reference.
+    <div class="well">
+      <p>var bart, homer;<br>
+      ff.getObjFromUri("/Persons/(firstName eq 'Bart')/father", function(response) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;homer = response;<br>
+      });<br>
+	  //or, if bart has already been loaded on the client<br>
+	  homer = bart.father;
+      </p>
+    </div>
+    <button id="person-reference-button" class="btn" onclick="getReferenceFromPersonByFirstName('Bart')">Try it!</button>
+    <br>
+    <p id = "person-reference-response"></p>
+  </div>
+  <div class="well" id = "grabbag-section">
+    <h2>Grab Bags</h2>
+    <div class="well">
+      <p>var grabbags;<br>
+        ff.getArrayFromUri("/Persons/(firstName eq 'Bart')/mother/()/siblings/(gender eq 'Female')", function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;grabbags = response;<br>
+        });
+      </p>
+    </div>
+    <button id="get-grabbag-button" class="btn" onclick="getGrabbagFromPersonByFirstName('Bart')">Try it!</button>
+    <br>
+    <p id = "get-grabbag-response"></p>
+  </div>
+  <div class="well" id = "backreference-section">
+    <h2>Back References</h2>
+    <p>This test will show you how to retrieve objects using Back References</p>
+    <div class="well">
+      <p>var homer, allBackRefs;<br>
+	  	  ff.grabBagGetAll(homer, "BackReferences", function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;allBackRefs = response;<br>
+        });<br>
+      </p>
+      <p>var homer, allSiblingBackRefs;<br>
+	  	  ff.grabBagGetAll(homer, "BackReferences.Persons.siblings", function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;allSiblingBackRefs = response;<br>
+        });<br>
+      </p>
+      <p>var homer, allFatherBackRefs;<br>
+	  	  ff.grabBagGetAll(homer, "BackReferences.Persons.father", function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;allFatherBackRefs = response;<br>
+        });<br>
+      </p>
+    </div>
+    <button id="all-backreference-button" class="btn" onclick="getAllBackReferences('Homer')">Get all Backreferences!</button>
+    <button id="siblings-backreference-button" class="btn" onclick="getSiblingsBackReferences('Homer')">Get siblings Backreferences!</button>
+    <button id="father-backreference-button" class="btn" onclick="getFatherBackReferences('Homer')">Get father Backreferences!</button>
+    <br>
+    <p id = "backreference-response"></p>
+  </div>
+  <div class="well" id = "query-section">
+    <h2>Queries</h2>
+    <p>This test will show you how to retrieve objects using various queries</p>
+    <div class="well">
+      <p>var fathers;<br>
+        ff.getArrayFromUri("/Persons/()/father"), function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;fathers = response;<br>
+        });<br>
+      </p>
+      <p>var mothers;<br>
+        ff.getArrayFromUri("/Persons/()/mother"), function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;mothers = response;<br>
+        });<br>
+      </p>
+      <p>var grandfathers;<br>
+        ff.getArrayFromUri("/Persons/(firstName eq 'Bart')/father or mother/()/father"), function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;grandfathers = response;<br>
+        });<br>
+      </p>
+      <p>var grandparents;<br>
+        ff.getArrayFromUri("/Persons/(firstName eq 'Bart')/father or mother/()/mother or father"), function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;grandparents = response;<br>
+        });<br>
+      </p>
+      <p>var cousins;<br>
+        ff.getArrayFromUri("/Persons/(firstName eq 'Ling')/father or mother/()/siblings/()/BackReferences.Persons.mother or BackReferences.Persons.father"), function(response) {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;cousins = response;<br>
+        });<br>
+      </p>
+    </div>
+    <button id="fathers-query-button" class="btn" onclick="everyFatherQuery()">All fathers!</button>
+    <button id="mothers-query-button" class="btn" onclick="everyMotherQuery()">All mothers!</button>
+    <button id="grandfathers-query-button" class="btn" onclick="grandfathersQuery('Bart')">Bart's grandfathers!</button>
+    <button id="grandparents-query-button" class="btn" onclick="grandparentsQuery('Bart')">Bart's grandfathers!</button>
+    <button id="cousins-query-button" class="btn" onclick="cousinsQuery('Ling')">Ling's cousins!</button>
+    <br>
+    <p id = "query-response"></p>
+  </div>
+</div>
+<!--Scripts-->
+<script src="lib/FatFractal.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/beautify.js"></script>
+</body>
+<script type="text/javascript">
+function Person(obj) {
+   this.firstName = null;
+   this.lastName = null;
+   this.gender = null;
+   this.mother = null;
+   this.father = null;
+   this.siblings = null;
+   this.picture = null;
+   if(obj) {
+	  this.firstName = obj.firstName;
+      this.lastName = obj.lastName;
+      this.gender = obj.gender;
+      this.mother = obj.mother;
+      this.father = obj.father;
+      this.siblings = obj.siblings;
+	  this.picture = obj.picture;
+   }
+   return this;
+}
+function savePerson() {
+   ff.login("test_user", "T3st_Us3r", function() {
+      var el = document.getElementById('person-persons-response');
+      var m = new Person();
+      m.title = "Argo";
+      m.description = "Argo is a 2012 historical drama thriller film directed by Ben Affleck.";
+      m.year =2012;
+      ff.createObjAtUri(m, "/Persons", function(resp) {
+         var mov = new Person(resp);
+         var str = js_beautify(JSON.stringify(mov), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         el.innerHTML = "<br><div class = 'well blue'>Person was created in the  " +
+            resp.ffRL + " Collection with data: " +
+            str + "</div>";
+         console.log("Person was created: " + JSON.stringify(resp));
+      }, function(code, msg) {
+         console.error("savePerson() createObjAtUri Error: " + code + " " + msg);
+         el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      });
+   }, function(code, msg) {
+      console.error("Error logging in: " + code + ", error message" + msg);
+   });
+}
+function getPersonsGraph() {
+   var el = document.getElementById('get-datagraph-response');
+   ff.getArrayFromUri("/Persons/()?depthRef=3&depthGb=3", function(g) {
+      console.log("Persons datagraph was retrieved: " + JSON.stringify(g));
+      var str = "";
+      var elStr = "";
+      var obj;
+      //if(g.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+      //else {
+         //for(var i = 0; i < favs.length; i++) {
+            //console.log("A " + favs[i].clazz + " was retrieved: " + JSON.stringify(favs[i]));
+            str = js_beautify(JSON.stringify(g), {
+               indent_size: 4,
+               indent_char: '&nbsp;',
+               linefeed_char: '<br>'
+            });
+            //elStr += "A " + favs[i].clazz + " object was retrieved from the  " +
+            elStr += "A datagraph was retrieved from the Persons Collection with data: " +
+               str + "<br>";
+         //}
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      //}
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function getReferenceFromPersonByFirstName(firstName) {
+   var el = document.getElementById('person-reference-response');
+   ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')/father", function(p) {
+	   var person = new Person(p);
+      console.log("Person was retrieved: " + JSON.stringify(person));
+      var str = "";
+      var elStr = "";
+      if(!person) alert("Could not find Person with firstName " + firstName + "!");
+      else {
+         str = js_beautify(JSON.stringify(person), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         elStr += "Person was retrieved from the  " +
+            p.ffRL + " Collection with data: " +
+            str + "<br>";
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      }
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getPerson() getObjFromUri Error: " + code + " " + msg);
+   });
+}
+function getGrabbagFromPersonByFirstName(firstName) {
+   var el = document.getElementById('get-grabbag-response');
+   ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/mother/()/siblings/(gender eq 'Female')", function(arr) {
+      console.log("Person objects were retrieved: " + JSON.stringify(arr));
+      var str = "";
+      var elStr = "";
+      var outArray = [];
+      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+      else {
+         for(var i = 0; i < arr.length; i++) {
+            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+            var p = new Person(arr[i]);
+            outArray.push(p);
+         }
+         str = js_beautify(JSON.stringify(outArray), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      }
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function getAllBackReferences(firstName) {
+   var el = document.getElementById('backreference-response');
+   ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')", function(obj) {
+      console.log("Person object was retrieved: " + JSON.stringify(obj));
+	  ff.grabBagGetAll(obj, "BackReferences", function(arr) {
+	      var str = "";
+	      var elStr = "";
+	      var outArray = [];
+	      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+	      else {
+	         for(var i = 0; i < arr.length; i++) {
+	            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+	            var p = new Person(arr[i]);
+	            outArray.push(p);
+	         }
+	         str = js_beautify(JSON.stringify(outArray), {
+	            indent_size: 4,
+	            indent_char: '&nbsp;',
+	            linefeed_char: '<br>'
+	         });
+	         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+	         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+	      }
+	  });
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function getSiblingsBackReferences(firstName) {
+   var el = document.getElementById('backreference-response');
+   ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')", function(obj) {
+      console.log("Person object was retrieved: " + JSON.stringify(obj));
+	  ff.grabBagGetAll(obj, "BackReferences.Persons.siblings", function(arr) {
+	      var str = "";
+	      var elStr = "";
+	      var outArray = [];
+	      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+	      else {
+	         for(var i = 0; i < arr.length; i++) {
+	            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+	            var p = new Person(arr[i]);
+	            outArray.push(p);
+	         }
+	         str = js_beautify(JSON.stringify(outArray), {
+	            indent_size: 4,
+	            indent_char: '&nbsp;',
+	            linefeed_char: '<br>'
+	         });
+	         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+	         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+	      }
+	  });
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function getFatherBackReferences(firstName) {
+   var el = document.getElementById('backreference-response');
+   ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')", function(obj) {
+      console.log("Person object was retrieved: " + JSON.stringify(obj));
+	  ff.grabBagGetAll(obj, "BackReferences.Persons.father", function(arr) {
+	      var str = "";
+	      var elStr = "";
+	      var outArray = [];
+	      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+	      else {
+	         for(var i = 0; i < arr.length; i++) {
+	            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+	            var p = new Person(arr[i]);
+	            outArray.push(p);
+	         }
+	         str = js_beautify(JSON.stringify(outArray), {
+	            indent_size: 4,
+	            indent_char: '&nbsp;',
+	            linefeed_char: '<br>'
+	         });
+	         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+	         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+	      }
+	  });
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function everyFatherQuery() {
+   var el = document.getElementById('query-response');
+   ff.getArrayFromUri("/Persons/()/father", function(arr) {
+      console.log("Person objects were retrieved: " + JSON.stringify(arr));
+      var str = "";
+      var elStr = "";
+      var outArray = [];
+      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+      else {
+         for(var i = 0; i < arr.length; i++) {
+            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+            var p = new Person(arr[i]);
+            outArray.push(p);
+         }
+         str = js_beautify(JSON.stringify(outArray), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      }
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function everyMotherQuery() {
+   var el = document.getElementById('query-response');
+   ff.getArrayFromUri("/Persons/()/mother", function(arr) {
+      console.log("Person objects were retrieved: " + JSON.stringify(arr));
+      var str = "";
+      var elStr = "";
+      var outArray = [];
+      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+      else {
+         for(var i = 0; i < arr.length; i++) {
+            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+            var p = new Person(arr[i]);
+            outArray.push(p);
+         }
+         str = js_beautify(JSON.stringify(outArray), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      }
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function grandfathersQuery(firstName) {
+   var el = document.getElementById('query-response');
+   ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/father or mother/()/father", function(arr) {
+      console.log("Person objects were retrieved: " + JSON.stringify(arr));
+      var str = "";
+      var elStr = "";
+      var outArray = [];
+      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+      else {
+         for(var i = 0; i < arr.length; i++) {
+            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+            var p = new Person(arr[i]);
+            outArray.push(p);
+         }
+         str = js_beautify(JSON.stringify(outArray), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      }
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function grandparentsQuery(firstName) {
+   var el = document.getElementById('query-response');
+   ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/father or mother/()/mother or father", function(arr) {
+      console.log("Person objects were retrieved: " + JSON.stringify(arr));
+      var str = "";
+      var elStr = "";
+      var outArray = [];
+      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+      else {
+         for(var i = 0; i < arr.length; i++) {
+            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+            var p = new Person(arr[i]);
+            outArray.push(p);
+         }
+         str = js_beautify(JSON.stringify(outArray), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      }
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+function cousinsQuery(firstName) {
+   var el = document.getElementById('query-response');
+   ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/father or mother/()/siblings/()/BackReferences.Persons.mother or BackReferences.Persons.father", function(arr) {
+      console.log("Person objects were retrieved: " + JSON.stringify(arr));
+      var str = "";
+      var elStr = "";
+      var outArray = [];
+      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+      else {
+         for(var i = 0; i < arr.length; i++) {
+            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
+            var p = new Person(arr[i]);
+            outArray.push(p);
+         }
+         str = js_beautify(JSON.stringify(outArray), {
+            indent_size: 4,
+            indent_char: '&nbsp;',
+            linefeed_char: '<br>'
+         });
+         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+      }
+   }, function(code, msg) {
+      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+      console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
+   });
+}
+var ff = new FatFractal();
+ff.login("test_user", "T3st_Us3r", function() {});
+</script>
+</html>
