@@ -1,4 +1,10 @@
 var ff = require("ffef/FatFractal");
+var io  = require ('io'); // standard CommonJS module
+var fs  = require ('fs'); // standard CommonJS module
+var bin = require ('binary'); // standard CommonJS module
+var hc  = require ('ringo/httpclient'); // not standardised by CommonJS yet, hence ringo prefix. see http://ringojs.org
+var Scalr   = Packages.org.imgscalr.Scalr; // import the Scalr Java package
+var ImageIO = Packages.javax.imageio.ImageIO; // import the imageIo Java packages
 
 function Person(obj) {
     this.clazz = "Person";
@@ -34,8 +40,35 @@ exports.cleanup = function() {
     r.mimeType = "text/html";
 }
 
+function getThumb(imgUrl, format) {
+    var resizedBytes = null;
+    /**
+     * We need a BufferedImage for the Scalr processing
+     * There are ImageIO read methods for InputStream, File and URL. We've got a
+     * ByteArray. So let's create a ByteArrayInputStream.
+     */
+    try {
+        var picData = hc.get(imgUrl).contentBytes;
+        var bais = new java.io.ByteArrayInputStream(picData);
+        var img  = ImageIO.read(bais);
+        /**
+         * Resize the picture
+         */
+        print("img width is: " + img.width + ", height: " + img.height);
+        var resized = Scalr.resize(img, Scalr.Method.SPEED, Scalr.Mode.FIT_EXACT, 167, 300);
+        var baos    = new java.io.ByteArrayOutputStream();
+        ImageIO.write (resized, format, baos);
+        /**
+         * Get the bytes from the ByteArrayOutputStream
+         */
+        resizedBytes = new bin.ByteArray(baos.toByteArray());
+    } catch (e) {}
+    return resizedBytes;
+}
+
 exports.populate = function() {
     // create the Person objects
+    var img;
     var abraham = ff.getObjFromUri("/Persons/(firstName eq 'Abraham')");
     print("Abraham is: " + abraham);
     if(!abraham) {
@@ -46,6 +79,8 @@ exports.populate = function() {
         abraham = ff.createObjAtUri(abraham, "/Persons", "system");
         print("created Abraham");
     }
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/3/3e/Abe_Simpson.png", "PNG");
+    ff.saveBlob(abraham, 'picture', img, 'image/png');
     var mona = ff.getObjFromUri("/Persons/(firstName eq 'Mona')");
     if(!mona) {
         mona = new Person();
@@ -55,6 +90,8 @@ exports.populate = function() {
         mona = ff.createObjAtUri(mona, "/Persons", "system");
         print("created Mona");
     }
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/7/7c/Mona_Simpson_-_first_appearance.jpg", "JPG");
+    ff.saveBlob(mona, 'picture', img, 'image/jpeg');
     var clancy = ff.getObjFromUri("/Persons/(firstName eq 'Clancy')");
     if(!clancy) {
         clancy = new Person();
@@ -64,6 +101,8 @@ exports.populate = function() {
         clancy = ff.createObjAtUri(clancy, "/Persons", "system");
         print("created Abraham");
     }
+    img = getThumb("http://images.wikia.com/simpsons/images/3/3b/Clancy_Bouvier.png", "PNG");
+    ff.saveBlob(clancy, 'picture', img, 'image/png');
     var jackie = ff.getObjFromUri("/Persons/(firstName eq 'Jackie')");
     if(!jackie) {
         jackie = new Person();
@@ -72,16 +111,20 @@ exports.populate = function() {
         jackie.gender = "Female";
         jackie = ff.createObjAtUri(jackie, "/Persons", "system");
     }
+    img = getThumb("http://images.wikia.com/simpsons/images/a/a8/Jacqueline_Bouvier.png", "PNG");
+    ff.saveBlob(jackie, 'picture', img, 'image/png');
     var herb = ff.getObjFromUri("/Persons/(firstName eq 'Herb')")
     if(!herb) {
         herb = new Person();
         herb.firstName = "Herb";
-        herb.lastName = "Simpson";
+        herb.lastName = "Powell";
         herb.gender = "Male";
         ff.addReferenceToObj(abraham.ffUrl, "father", herb)
         ff.addReferenceToObj(mona.ffUrl, "mother", herb)
         herb = ff.createObjAtUri(herb, "/Persons", "system");
     }
+    img = getThumb("http://images.wikia.com/simpsons/images/0/00/Herbert_powell.png", "PNG");
+    ff.saveBlob(herb, 'picture', img, 'image/png');
     var homer = ff.getObjFromUri("/Persons/(firstName eq 'Homer')")
     if(!homer) {
         homer = new Person();
@@ -94,6 +137,8 @@ exports.populate = function() {
     }
     ff.grabBagAdd(homer.ffUrl, herb.ffUrl, "siblings")
     ff.grabBagAdd(herb.ffUrl, homer.ffUrl, "siblings")
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/0/02/Homer_Simpson_2006.png", "PNG");
+    ff.saveBlob(homer, 'picture', img, 'image/png');
     var marge = ff.getObjFromUri("/Persons/(firstName eq 'Marge')");
     if(!marge) {
         marge = new Person();
@@ -104,21 +149,25 @@ exports.populate = function() {
         ff.addReferenceToObj(jackie.ffUrl, "mother", marge)
         marge = ff.createObjAtUri(marge, "/Persons", "system");
     }
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/0/0b/Marge_Simpson.png", "PNG");
+    ff.saveBlob(marge, 'picture', img, 'image/png');
     var patty = ff.getObjFromUri("/Persons/(firstName eq 'Patty')");
     if(!patty) {
         patty = new Person();
         patty.firstName = "Patty";
-        patty.lastName = "Simpson";
+        patty.lastName = "Bouvier";
         patty.gender = "Female";
         ff.addReferenceToObj(clancy.ffUrl, "father", patty)
         ff.addReferenceToObj(jackie.ffUrl, "mother", patty)
         patty = ff.createObjAtUri(patty, "/Persons", "system");
     }
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/f/f8/Patty_Bouvier.png", "PNG");
+    ff.saveBlob(patty, 'picture', img, 'image/png');
     var selma = ff.getObjFromUri("/Persons/(firstName eq 'Selma')");
     if(!selma) {
         selma = new Person();
         selma.firstName = "Selma";
-        selma.lastName = "Simpson";
+        selma.lastName = "Bouvier";
         selma.gender = "Female";
         ff.addReferenceToObj(clancy.ffUrl, "father", selma)
         ff.addReferenceToObj(jackie.ffUrl, "mother", selma)
@@ -130,6 +179,8 @@ exports.populate = function() {
     ff.grabBagAdd(selma.ffUrl, marge.ffUrl, "siblings")
     ff.grabBagAdd(marge.ffUrl, selma.ffUrl, "siblings")
     ff.grabBagAdd(patty.ffUrl, selma.ffUrl, "siblings")
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/b/ba/Selma_Bouvier.png", "PNG");
+    ff.saveBlob(selma, 'picture', img, 'image/png');
     var bart = ff.getObjFromUri("/Persons/(firstName eq 'Bart')");
     if(!bart) {
         bart = new Person();
@@ -140,6 +191,8 @@ exports.populate = function() {
         ff.addReferenceToObj(marge.ffUrl, "mother", bart)
         bart = ff.createObjAtUri(bart, "/Persons", "system");
     }
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/thumb/e/ed/Bart_Simpson.svg/500px-Bart_Simpson.svg.png", "PNG");
+    ff.saveBlob(bart, 'picture', img, 'image/png');
     var lisa = ff.getObjFromUri("/Persons/(firstName eq 'Lisa')");
     if(!lisa) {
         lisa = new Person();
@@ -150,6 +203,8 @@ exports.populate = function() {
         ff.addReferenceToObj(marge.ffUrl, "mother", lisa)
         lisa = ff.createObjAtUri(lisa, "/Persons", "system");
     }
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/e/ec/Lisa_Simpson.png", "PNG");
+    ff.saveBlob(lisa, 'picture', img, 'image/png');
     var maggie = ff.getObjFromUri("/Persons/(firstName eq 'Maggie')");
     if(!maggie) {
         maggie = new Person();
@@ -160,6 +215,8 @@ exports.populate = function() {
         ff.addReferenceToObj(marge.ffUrl, "mother", maggie)
         maggie = ff.createObjAtUri(maggie, "/Persons", "system");
     }
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/9/9d/Maggie_Simpson.png", "PNG");
+    ff.saveBlob(maggie, 'picture', img, 'image/png');
     ff.grabBagAdd(lisa.ffUrl, bart.ffUrl, "siblings")
     ff.grabBagAdd(maggie.ffUrl, bart.ffUrl, "siblings")
     ff.grabBagAdd(bart.ffUrl, lisa.ffUrl, "siblings")
@@ -175,8 +232,8 @@ exports.populate = function() {
         ff.addReferenceToObj(selma.ffUrl, "mother", ling)
         ling = ff.createObjAtUri(ling, "/Persons", "system");
     }
-    // add in grabbags
-    ff.grabBagAdd(herb.ffUrl, homer.ffUrl, "siblings")
+    img = getThumb("http://upload.wikimedia.org/wikipedia/en/c/c1/LingBouvier.png", "PNG");
+    ff.saveBlob(ling, 'picture', img, 'image/png');
 
     var r = ff.response();
     r.result = "<h1> Thanks for visiting</h1><p>We have populated the data objects for the tests.</p>";

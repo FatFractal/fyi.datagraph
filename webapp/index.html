@@ -68,7 +68,7 @@
     </div>
     <button id="person-reference-button" class="btn" onclick="getReferenceFromPersonByFirstName('Bart')">Try it!</button>
     <br>
-    <p id = "person-reference-response"></p>
+    <div id = "person-reference-response"></div>
   </div>
   <div class="well" id = "grabbag-section">
     <h2>Grab Bags</h2>
@@ -143,7 +143,7 @@
     <button id="fathers-query-button" class="btn" onclick="everyFatherQuery()">All fathers!</button>
     <button id="mothers-query-button" class="btn" onclick="everyMotherQuery()">All mothers!</button>
     <button id="grandfathers-query-button" class="btn" onclick="grandfathersQuery('Bart')">Bart's grandfathers!</button>
-    <button id="grandparents-query-button" class="btn" onclick="grandparentsQuery('Bart')">Bart's grandfathers!</button>
+    <button id="grandparents-query-button" class="btn" onclick="grandparentsQuery('Bart')">Bart's grandparents!</button>
     <button id="cousins-query-button" class="btn" onclick="cousinsQuery('Ling')">Ling's cousins!</button>
     <br>
     <p id = "query-response"></p>
@@ -201,56 +201,58 @@ function Person(obj) {
       this.siblings = obj.siblings;
 	  this.picture = obj.picture;
    }
-   return this;
-}
-function savePerson() {
-   ff.login("test_user", "T3st_Us3r", function() {
-      var el = document.getElementById('person-persons-response');
-      var m = new Person();
-      m.title = "Argo";
-      m.description = "Argo is a 2012 historical drama thriller film directed by Ben Affleck.";
-      m.year =2012;
-      ff.createObjAtUri(m, "/Persons", function(resp) {
-         var mov = new Person(resp);
-         var str = js_beautify(JSON.stringify(mov), {
-            indent_size: 4,
-            indent_char: '&nbsp;',
-            linefeed_char: '<br>'
-         });
-         el.innerHTML = "<br><div class = 'well blue'>Person was created in the  " +
-            resp.ffRL + " Collection with data: " +
-            str + "</div>";
-         console.log("Person was created: " + JSON.stringify(resp));
-      }, function(code, msg) {
-         console.error("savePerson() createObjAtUri Error: " + code + " " + msg);
-         el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
-      });
-   }, function(code, msg) {
-      console.error("Error logging in: " + code + ", error message" + msg);
-   });
+   this.printMe = function() {
+	   if(this.picture) this.picture = "binary data: " + this.picture.length + " bytes";
+	   if(this.mother && this.mother.picture) this.mother.picture = "binary data: " + this.mother.picture.length + " bytes";
+	   if(this.father && this.father.picture) this.father.picture = "binary data: " + this.father.picture.length + " bytes";
+	   if(this.mother && this.mother.mother && this.mother.mother.picture) this.mother.mother.picture = "binary data: " + this.mother.mother.picture.length + " bytes";
+	   if(this.mother && this.mother.father && this.mother.father.picture) this.mother.father.picture = "binary data: " + this.mother.father.picture.length + " bytes";
+	   if(this.father && this.father.mother && this.father.mother.picture) this.father.mother.picture = "binary data: " + this.father.mother.picture.length + " bytes";
+	   if(this.father && this.father.father && this.father.father.picture) this.father.father.picture = "binary data: " + this.father.father.picture.length + " bytes";
+	   return this;
+   }
 }
 function getPersonsGraph() {
    var el = document.getElementById('get-datagraph-response');
-   ff.getArrayFromUri("/Persons/()?depthRef=3&depthGb=3", function(g) {
-      console.log("Persons datagraph was retrieved: " + JSON.stringify(g));
-      var str = "";
-      var elStr = "";
-      var obj;
-      //if(g.length <= 0) alert("Create some Person objects in the Persons Collection first!");
-      //else {
-         //for(var i = 0; i < favs.length; i++) {
-            //console.log("A " + favs[i].clazz + " was retrieved: " + JSON.stringify(favs[i]));
-            str = js_beautify(JSON.stringify(g), {
-               indent_size: 4,
-               indent_char: '&nbsp;',
-               linefeed_char: '<br>'
-            });
-            //elStr += "A " + favs[i].clazz + " object was retrieved from the  " +
-            elStr += "A datagraph was retrieved from the Persons Collection with data: " +
-               str + "<br>";
-         //}
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
-      //}
+   el.innerHTML = "";
+   ff.getArrayFromUri("/Persons/()?depthRef=3&depthGb=3", function(arr) {
+       var str = "";
+       var elStr = "";
+       var outArray = [];
+       if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
+       else {
+          var wellWrap = document.createElement("div");
+  		 wellWrap.className = "well blue";
+           var mediaDiv = document.createElement("div");
+  		 mediaDiv.className = "media";
+           var mediaBody = document.createElement("div");
+  		 mediaBody.className = "media-body";		 
+           var mediaHeading = document.createElement("p");
+  		 mediaHeading.className = "media-heading";		 
+           el.appendChild(wellWrap);
+           wellWrap.appendChild(mediaDiv);
+          for(var i = 0; i < arr.length; i++) {
+             var p = new Person(arr[i]).printMe();
+             outArray.push(p);
+             var imgA = document.createElement("a");
+     		imgA.className = "pull-left";
+     		 imgA.style.clear = 'both';
+             var img = document.createElement("img");
+             img.className = "media-object";
+       		img.src = arrayBufferToDataUri(arr[i].picture);
+             imgA.appendChild(img); 
+             mediaDiv.appendChild(imgA);
+          }
+          str = js_beautify(JSON.stringify(outArray), {
+             indent_size: 4,
+             indent_char: '&nbsp;',
+             linefeed_char: '<br>'
+          });
+          mediaDiv.appendChild(mediaBody); 
+          mediaBody.appendChild(mediaHeading); 
+          elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
+          mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+       }
    }, function(code, msg) {
       el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
       console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
@@ -258,14 +260,35 @@ function getPersonsGraph() {
 }
 function getReferenceFromPersonByFirstName(firstName) {
    var el = document.getElementById('person-reference-response');
+   el.innerHTML = "";
    ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')/father", function(p) {
-	   var person = new Person(p);
-      console.log("Person was retrieved: " + JSON.stringify(person));
+	  var person = new Person(p);
       var str = "";
       var elStr = "";
       if(!person) alert("Could not find Person with firstName " + firstName + "!");
       else {
-         str = js_beautify(JSON.stringify(person), {
+         var wellWrap = document.createElement("div");
+		 wellWrap.className = "well blue";
+         var mediaDiv = document.createElement("div");
+		 mediaDiv.className = "media";
+         var imgA = document.createElement("a");
+		 imgA.className = "pull-left";
+		 imgA.style.clear = 'both'
+         var img = document.createElement("img");
+		 img.className = "media-object";
+  		 img.src = arrayBufferToDataUri(person.picture);
+         var mediaBody = document.createElement("div");
+		 mediaBody.className = "media-body";		 
+         var mediaHeading = document.createElement("p");
+		 mediaHeading.className = "media-heading";		 
+         el.appendChild(wellWrap);
+         wellWrap.appendChild(mediaDiv);
+         mediaDiv.appendChild(imgA);
+         imgA.appendChild(img); 
+         mediaDiv.appendChild(mediaBody); 
+         mediaBody.appendChild(mediaHeading); 
+		 var printMe = person.printMe();
+         str = js_beautify(JSON.stringify(printMe), {
             indent_size: 4,
             indent_char: '&nbsp;',
             linefeed_char: '<br>'
@@ -273,34 +296,53 @@ function getReferenceFromPersonByFirstName(firstName) {
          elStr += "Person was retrieved from the  " +
             p.ffRL + " Collection with data: " +
             str + "<br>";
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+		 mediaHeading.innerHTML = elStr;
       }
    }, function(code, msg) {
-      el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
+	  el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
       console.error("getPerson() getObjFromUri Error: " + code + " " + msg);
    });
 }
 function getGrabbagFromPersonByFirstName(firstName) {
    var el = document.getElementById('get-grabbag-response');
+   el.innerHTML = "";
    ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/mother/()/siblings/(gender eq 'Female')", function(arr) {
-      console.log("Person objects were retrieved: " + JSON.stringify(arr));
       var str = "";
       var elStr = "";
       var outArray = [];
       if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
       else {
+         var wellWrap = document.createElement("div");
+ 		 wellWrap.className = "well blue";
+          var mediaDiv = document.createElement("div");
+ 		 mediaDiv.className = "media";
+          var mediaBody = document.createElement("div");
+ 		 mediaBody.className = "media-body";		 
+          var mediaHeading = document.createElement("p");
+ 		 mediaHeading.className = "media-heading";		 
+          el.appendChild(wellWrap);
+          wellWrap.appendChild(mediaDiv);
          for(var i = 0; i < arr.length; i++) {
-            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-            var p = new Person(arr[i]);
+            var p = new Person(arr[i]).printMe();
             outArray.push(p);
+            var imgA = document.createElement("a");
+    		imgA.className = "pull-left";
+    		 imgA.style.clear = 'both'
+            var img = document.createElement("img");
+            img.className = "media-object";
+      		img.src = arrayBufferToDataUri(arr[i].picture);
+            imgA.appendChild(img); 
+            mediaDiv.appendChild(imgA);
          }
          str = js_beautify(JSON.stringify(outArray), {
             indent_size: 4,
             indent_char: '&nbsp;',
             linefeed_char: '<br>'
          });
+         mediaDiv.appendChild(mediaBody); 
+         mediaBody.appendChild(mediaHeading); 
          elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
       }
    }, function(code, msg) {
       el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
@@ -309,26 +351,45 @@ function getGrabbagFromPersonByFirstName(firstName) {
 }
 function getAllBackReferences(firstName) {
    var el = document.getElementById('backreference-response');
+   el.innerHTML = "";
    ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')", function(obj) {
-      console.log("Person object was retrieved: " + JSON.stringify(obj));
 	  ff.grabBagGetAll(obj, "BackReferences", function(arr) {
 	      var str = "";
 	      var elStr = "";
 	      var outArray = [];
 	      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
 	      else {
+	          var wellWrap = document.createElement("div");
+	  		 wellWrap.className = "well blue";
+	           var mediaDiv = document.createElement("div");
+	  		 mediaDiv.className = "media";
+	           var mediaBody = document.createElement("div");
+	  		 mediaBody.className = "media-body";		 
+	           var mediaHeading = document.createElement("p");
+	  		 mediaHeading.className = "media-heading";		 
+	           el.appendChild(wellWrap);
+	           wellWrap.appendChild(mediaDiv);
 	         for(var i = 0; i < arr.length; i++) {
-	            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-	            var p = new Person(arr[i]);
+	            var p = new Person(arr[i]).printMe();
 	            outArray.push(p);
+	            var imgA = document.createElement("a");
+	    	    imgA.className = "pull-left";
+	 			imgA.style.clear = 'both'
+                var img = document.createElement("img");
+	            img.className = "media-object";
+	      		img.src = arrayBufferToDataUri(arr[i].picture);
+	            imgA.appendChild(img); 
+	            mediaDiv.appendChild(imgA);
 	         }
 	         str = js_beautify(JSON.stringify(outArray), {
 	            indent_size: 4,
 	            indent_char: '&nbsp;',
 	            linefeed_char: '<br>'
 	         });
+	         mediaDiv.appendChild(mediaBody); 
+	         mediaBody.appendChild(mediaHeading); 
 	         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-	         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+	         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
 	      }
 	  });
    }, function(code, msg) {
@@ -338,26 +399,45 @@ function getAllBackReferences(firstName) {
 }
 function getSiblingsBackReferences(firstName) {
    var el = document.getElementById('backreference-response');
+   el.innerHTML = "";
    ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')", function(obj) {
-      console.log("Person object was retrieved: " + JSON.stringify(obj));
 	  ff.grabBagGetAll(obj, "BackReferences.Persons.siblings", function(arr) {
 	      var str = "";
 	      var elStr = "";
 	      var outArray = [];
 	      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
 	      else {
+	          var wellWrap = document.createElement("div");
+	  		 wellWrap.className = "well blue";
+	           var mediaDiv = document.createElement("div");
+	  		 mediaDiv.className = "media";
+	           var mediaBody = document.createElement("div");
+	  		 mediaBody.className = "media-body";		 
+	           var mediaHeading = document.createElement("p");
+	  		 mediaHeading.className = "media-heading";		 
+	           el.appendChild(wellWrap);
+	           wellWrap.appendChild(mediaDiv);
 	         for(var i = 0; i < arr.length; i++) {
-	            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-	            var p = new Person(arr[i]);
+	            var p = new Person(arr[i]).printMe();
 	            outArray.push(p);
+	            var imgA = document.createElement("a");
+	    	    imgA.className = "pull-left";
+	 			imgA.style.clear = 'both'
+                var img = document.createElement("img");
+	            img.className = "media-object";
+	      		img.src = arrayBufferToDataUri(arr[i].picture);
+	            imgA.appendChild(img); 
+	            mediaDiv.appendChild(imgA);
 	         }
 	         str = js_beautify(JSON.stringify(outArray), {
 	            indent_size: 4,
 	            indent_char: '&nbsp;',
 	            linefeed_char: '<br>'
 	         });
+	         mediaDiv.appendChild(mediaBody); 
+	         mediaBody.appendChild(mediaHeading); 
 	         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-	         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+	         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
 	      }
 	  });
    }, function(code, msg) {
@@ -367,26 +447,45 @@ function getSiblingsBackReferences(firstName) {
 }
 function getFatherBackReferences(firstName) {
    var el = document.getElementById('backreference-response');
+   el.innerHTML = "";
    ff.getObjFromUri("/Persons/(firstName eq '" + firstName + "')", function(obj) {
-      console.log("Person object was retrieved: " + JSON.stringify(obj));
 	  ff.grabBagGetAll(obj, "BackReferences.Persons.father", function(arr) {
 	      var str = "";
 	      var elStr = "";
 	      var outArray = [];
 	      if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
 	      else {
+	          var wellWrap = document.createElement("div");
+	  		 wellWrap.className = "well blue";
+	           var mediaDiv = document.createElement("div");
+	  		 mediaDiv.className = "media";
+	           var mediaBody = document.createElement("div");
+	  		 mediaBody.className = "media-body";		 
+	           var mediaHeading = document.createElement("p");
+	  		 mediaHeading.className = "media-heading";		 
+	           el.appendChild(wellWrap);
+	           wellWrap.appendChild(mediaDiv);
 	         for(var i = 0; i < arr.length; i++) {
-	            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-	            var p = new Person(arr[i]);
+	            var p = new Person(arr[i]).printMe();
 	            outArray.push(p);
+	            var imgA = document.createElement("a");
+	    	    imgA.className = "pull-left";
+	 			imgA.style.clear = 'both'
+                var img = document.createElement("img");
+	            img.className = "media-object";
+	      		img.src = arrayBufferToDataUri(arr[i].picture);
+	            imgA.appendChild(img); 
+	            mediaDiv.appendChild(imgA);
 	         }
 	         str = js_beautify(JSON.stringify(outArray), {
 	            indent_size: 4,
 	            indent_char: '&nbsp;',
 	            linefeed_char: '<br>'
 	         });
+	         mediaDiv.appendChild(mediaBody); 
+	         mediaBody.appendChild(mediaHeading); 
 	         elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-	         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+	         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
 	      }
 	  });
    }, function(code, msg) {
@@ -396,25 +495,44 @@ function getFatherBackReferences(firstName) {
 }
 function everyFatherQuery() {
    var el = document.getElementById('query-response');
+   el.innerHTML = "";
    ff.getArrayFromUri("/Persons/()/father", function(arr) {
-      console.log("Person objects were retrieved: " + JSON.stringify(arr));
       var str = "";
       var elStr = "";
       var outArray = [];
       if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
       else {
+          var wellWrap = document.createElement("div");
+  		 wellWrap.className = "well blue";
+           var mediaDiv = document.createElement("div");
+  		 mediaDiv.className = "media";
+           var mediaBody = document.createElement("div");
+  		 mediaBody.className = "media-body";		 
+           var mediaHeading = document.createElement("p");
+  		 mediaHeading.className = "media-heading";		 
+           el.appendChild(wellWrap);
+           wellWrap.appendChild(mediaDiv);
          for(var i = 0; i < arr.length; i++) {
-            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-            var p = new Person(arr[i]);
+            var p = new Person(arr[i]).printMe();
             outArray.push(p);
+            var imgA = document.createElement("a");
+    	    imgA.className = "pull-left";
+ 			imgA.style.clear = 'both'
+            var img = document.createElement("img");
+            img.className = "media-object";
+      		img.src = arrayBufferToDataUri(arr[i].picture);
+            imgA.appendChild(img); 
+            mediaDiv.appendChild(imgA);
          }
          str = js_beautify(JSON.stringify(outArray), {
             indent_size: 4,
             indent_char: '&nbsp;',
             linefeed_char: '<br>'
          });
+         mediaDiv.appendChild(mediaBody); 
+         mediaBody.appendChild(mediaHeading); 
          elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
       }
    }, function(code, msg) {
       el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
@@ -423,25 +541,44 @@ function everyFatherQuery() {
 }
 function everyMotherQuery() {
    var el = document.getElementById('query-response');
+   el.innerHTML = "";
    ff.getArrayFromUri("/Persons/()/mother", function(arr) {
-      console.log("Person objects were retrieved: " + JSON.stringify(arr));
       var str = "";
       var elStr = "";
       var outArray = [];
       if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
       else {
+          var wellWrap = document.createElement("div");
+  		 wellWrap.className = "well blue";
+           var mediaDiv = document.createElement("div");
+  		 mediaDiv.className = "media";
+           var mediaBody = document.createElement("div");
+  		 mediaBody.className = "media-body";		 
+           var mediaHeading = document.createElement("p");
+  		 mediaHeading.className = "media-heading";		 
+           el.appendChild(wellWrap);
+           wellWrap.appendChild(mediaDiv);
          for(var i = 0; i < arr.length; i++) {
-            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-            var p = new Person(arr[i]);
+            var p = new Person(arr[i]).printMe();
             outArray.push(p);
+            var imgA = document.createElement("a");
+    	    imgA.className = "pull-left";
+ 			imgA.style.clear = 'both'
+            var img = document.createElement("img");
+            img.className = "media-object";
+      		img.src = arrayBufferToDataUri(arr[i].picture);
+            imgA.appendChild(img); 
+            mediaDiv.appendChild(imgA);
          }
          str = js_beautify(JSON.stringify(outArray), {
             indent_size: 4,
             indent_char: '&nbsp;',
             linefeed_char: '<br>'
          });
+         mediaDiv.appendChild(mediaBody); 
+         mediaBody.appendChild(mediaHeading); 
          elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
       }
    }, function(code, msg) {
       el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
@@ -450,25 +587,44 @@ function everyMotherQuery() {
 }
 function grandfathersQuery(firstName) {
    var el = document.getElementById('query-response');
+   el.innerHTML = "";
    ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/father or mother/()/father", function(arr) {
-      console.log("Person objects were retrieved: " + JSON.stringify(arr));
       var str = "";
       var elStr = "";
       var outArray = [];
       if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
       else {
+          var wellWrap = document.createElement("div");
+  		 wellWrap.className = "well blue";
+           var mediaDiv = document.createElement("div");
+  		 mediaDiv.className = "media";
+           var mediaBody = document.createElement("div");
+  		 mediaBody.className = "media-body";		 
+           var mediaHeading = document.createElement("p");
+  		 mediaHeading.className = "media-heading";		 
+           el.appendChild(wellWrap);
+           wellWrap.appendChild(mediaDiv);
          for(var i = 0; i < arr.length; i++) {
-            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-            var p = new Person(arr[i]);
+            var p = new Person(arr[i]).printMe();
             outArray.push(p);
+            var imgA = document.createElement("a");
+    	    imgA.className = "pull-left";
+ 			imgA.style.clear = 'both'
+            var img = document.createElement("img");
+            img.className = "media-object";
+      		img.src = arrayBufferToDataUri(arr[i].picture);
+            imgA.appendChild(img); 
+            mediaDiv.appendChild(imgA);
          }
          str = js_beautify(JSON.stringify(outArray), {
             indent_size: 4,
             indent_char: '&nbsp;',
             linefeed_char: '<br>'
          });
+         mediaDiv.appendChild(mediaBody); 
+         mediaBody.appendChild(mediaHeading); 
          elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
       }
    }, function(code, msg) {
       el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
@@ -477,25 +633,44 @@ function grandfathersQuery(firstName) {
 }
 function grandparentsQuery(firstName) {
    var el = document.getElementById('query-response');
+   el.innerHTML = "";
    ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/father or mother/()/mother or father", function(arr) {
-      console.log("Person objects were retrieved: " + JSON.stringify(arr));
       var str = "";
       var elStr = "";
       var outArray = [];
       if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
       else {
+          var wellWrap = document.createElement("div");
+  		 wellWrap.className = "well blue";
+           var mediaDiv = document.createElement("div");
+  		 mediaDiv.className = "media";
+           var mediaBody = document.createElement("div");
+  		 mediaBody.className = "media-body";		 
+           var mediaHeading = document.createElement("p");
+  		 mediaHeading.className = "media-heading";		 
+           el.appendChild(wellWrap);
+           wellWrap.appendChild(mediaDiv);
          for(var i = 0; i < arr.length; i++) {
-            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-            var p = new Person(arr[i]);
+            var p = new Person(arr[i]).printMe();
             outArray.push(p);
+            var imgA = document.createElement("a");
+    	    imgA.className = "pull-left";
+ 			imgA.style.clear = 'both'
+            var img = document.createElement("img");
+            img.className = "media-object";
+      		img.src = arrayBufferToDataUri(arr[i].picture);
+            imgA.appendChild(img); 
+            mediaDiv.appendChild(imgA);
          }
          str = js_beautify(JSON.stringify(outArray), {
             indent_size: 4,
             indent_char: '&nbsp;',
             linefeed_char: '<br>'
          });
+         mediaDiv.appendChild(mediaBody); 
+         mediaBody.appendChild(mediaHeading); 
          elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
       }
    }, function(code, msg) {
       el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
@@ -504,30 +679,75 @@ function grandparentsQuery(firstName) {
 }
 function cousinsQuery(firstName) {
    var el = document.getElementById('query-response');
+   el.innerHTML = "";
    ff.getArrayFromUri("/Persons/(firstName eq '" + firstName + "')/father or mother/()/siblings/()/BackReferences.Persons.mother or BackReferences.Persons.father", function(arr) {
-      console.log("Person objects were retrieved: " + JSON.stringify(arr));
       var str = "";
       var elStr = "";
       var outArray = [];
       if(arr.length <= 0) alert("Create some Person objects in the Persons Collection first!");
       else {
+          var wellWrap = document.createElement("div");
+  		 wellWrap.className = "well blue";
+           var mediaDiv = document.createElement("div");
+  		 mediaDiv.className = "media";
+           var mediaBody = document.createElement("div");
+  		 mediaBody.className = "media-body";		 
+           var mediaHeading = document.createElement("p");
+  		 mediaHeading.className = "media-heading";		 
+           el.appendChild(wellWrap);
+           wellWrap.appendChild(mediaDiv);
          for(var i = 0; i < arr.length; i++) {
-            console.log("A " + arr[i].clazz + " was retrieved: " + JSON.stringify(arr[i]));
-            var p = new Person(arr[i]);
+            var p = new Person(arr[i]).printMe();
             outArray.push(p);
+            var imgA = document.createElement("a");
+    	    imgA.className = "pull-left";
+ 			imgA.style.clear = 'both'
+            var img = document.createElement("img");
+            img.className = "media-object";
+      		img.src = arrayBufferToDataUri(arr[i].picture);
+            imgA.appendChild(img); 
+            mediaDiv.appendChild(imgA);
          }
          str = js_beautify(JSON.stringify(outArray), {
             indent_size: 4,
             indent_char: '&nbsp;',
             linefeed_char: '<br>'
          });
+         mediaDiv.appendChild(mediaBody); 
+         mediaBody.appendChild(mediaHeading); 
          elStr = arr.length + " Person objects were retrieved from the Persons Collection with data: " + str;
-         el.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
+         mediaHeading.innerHTML = "<br><div class = 'well blue'>" + elStr + "</div>";
       }
    }, function(code, msg) {
       el.innerHTML = "<br><div class = 'well red'>Got an error: " + msg + "</div>";
       console.error("getActorsFromFavs() getArrayFromUri Error: " + code + " " + msg);
    });
+}
+function arrayBufferToDataUri(arrayBuffer) {
+  var base64 = '',
+    encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
+    bytes = new Uint8Array(arrayBuffer), byteLength = bytes.byteLength,
+    byteRemainder = byteLength % 3, mainLength = byteLength - byteRemainder,
+    a, b, c, d, chunk;
+  for (var i = 0; i < mainLength; i = i + 3) {
+    chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+    a = (chunk & 16515072) >> 18; b = (chunk & 258048) >> 12;
+    c = (chunk & 4032) >> 6; d = chunk & 63;
+    base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d];
+  }
+  if (byteRemainder == 1) {
+    chunk = bytes[mainLength];
+    a = (chunk & 252) >> 2;
+    b = (chunk & 3) << 4;
+    base64 += encodings[a] + encodings[b] + '==';
+  } else if (byteRemainder == 2) {
+    chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1];
+    a = (chunk & 16128) >> 8;
+    b = (chunk & 1008) >> 4;
+    c = (chunk & 15) << 2;
+    base64 += encodings[a] + encodings[b] + encodings[c] + '=';
+  }
+  return "data:image/png;base64," + base64;
 }
 var ff = new FatFractal();
 ff.login("test_user", "T3st_Us3r", function() {});

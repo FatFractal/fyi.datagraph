@@ -42,4 +42,3 @@ CREATE COLLECTION /Persons OBJECTTYPE Person
 #
 CREATE EXTENSION /cleanup AS javascript:require('scripts/extensions.js').cleanup();
 CREATE EXTENSION /populate AS javascript:require('scripts/extensions.js').populate();
-
