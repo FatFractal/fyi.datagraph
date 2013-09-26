@@ -1,4 +1,4 @@
-fyi.objectsandcollections
+fyi.datagraph
 =========================
 
 This test application demonstrates real examples of working with FatFractal's datagraph.
